@@ -1,6 +1,6 @@
 name: Deploy to GitHub Pages
 
- on:
+on:
    push:
      branches:
        - main
@@ -9,16 +9,16 @@ name: Deploy to GitHub Pages
        - '.github/workflows/deploy-github-pages.yml'
    workflow_dispatch:  # 允许手动触发
 
- permissions:
+permissions:
    contents: read
    pages: write
    id-token: write
 
- concurrency:
+concurrency:
    group: "pages"
    cancel-in-progress: false
 
- jobs:
+jobs:
    deploy:
      environment:
        name: github-pages
