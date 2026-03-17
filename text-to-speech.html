@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>英文文字转语音 - Text to Speech</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        /* 浏览器兼容性提示 */
+        .compatibility-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .compatibility-warning.show {
+            display: block;
+        }
+
+        /* 文本输入区域 */
+        .input-section {
+            margin-bottom: 25px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 180px;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            resize: vertical;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* 音色选择 */
+        .voice-section {
+            margin-bottom: 25px;
+        }
+
+        .section-label {
+            display: block;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 15px;
+            font-size: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* 滑块控制 */
+        .controls-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .slider-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .slider-value {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #764ba2;
+            transform: scale(1.2);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            border: none;
+        }
+
+        /* 按钮组 */
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:not(:disabled):hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:not(:disabled):hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:not(:disabled):hover {
+            background: #c82333;
+        }
+
+        /* 状态栏 */
+        .status-bar {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-icon {
+            font-size: 24px;
+        }
+
+        .status-text {
+            flex: 1;
+            font-size: 14px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .status-bar.speaking {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+        }
+
+        .status-bar.error {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .status-bar.error .status-text {
+            color: white;
+        }
+
+        /* 波形动画 */
+        .wave-container {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            height: 40px;
+        }
+
+        .wave-container.active {
+            display: flex;
+        }
+
+        .wave-bar {
+            width: 4px;
+            height: 10px;
+            background: #667eea;
+            border-radius: 2px;
+            animation: wave 1s ease-in-out infinite;
+        }
+
+        .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+        .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+        .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+        .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+
+        @keyframes wave {
+            0%, 100% { height: 10px; }
+            50% { height: 30px; }
+        }
+
+        /* 字符计数 */
+        .char-count {
+            text-align: right;
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* 快捷示例 */
+        .examples {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px dashed #e0e0e0;
+        }
+
+        .examples h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .example-btn {
+            padding: 8px 15px;
+            font-size: 13px;
+            background: #f0f0f0;
+            border: 1px solid #d0d0d0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔊 文字转语音</h1>
+        <p class="subtitle">Text to Speech - 基于浏览器 Web Speech API</p>
+
+        <!-- 兼容性警告 -->
+        <div class="compatibility-warning" id="warningBox">
+            ⚠️ 您的浏览器可能不支持语音合成功能，建议使用 Chrome、Safari 或 Edge 浏览器。
+        </div>
+
+        <!-- 文本输入 -->
+        <div class="input-section">
+            <label class="section-label" for="textInput">输入英文文字：</label>
+            <textarea
+                id="textInput"
+                placeholder="请在此输入要朗读的英文文字，例如：Hello, this is a text to speech demo. You can adjust the speed, pitch and volume as you like."
+            >Hello, welcome to the text to speech application. This tool uses the Web Speech API to convert your text into natural sounding speech. You can customize the voice, speed, pitch and volume to suit your preferences.</textarea>
+            <div class="char-count">
+                字符数: <span id="charCount">0</span>
+            </div>
+        </div>
+
+        <!-- 音色选择 -->
+        <div class="voice-section">
+            <label class="section-label" for="voiceSelect">选择音色：</label>
+            <select id="voiceSelect">
+                <option value="">加载中...</option>
+            </select>
+        </div>
+
+        <!-- 参数控制 -->
+        <div class="controls-section">
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">🔊 音量</span>
+                    <span class="slider-value" id="volumeValue">100%</span>
+                </div>
+                <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">⚡ 语速</span>
+                    <span class="slider-value" id="rateValue">1.0x</span>
+                </div>
+                <input type="range" id="rateSlider" min="0.1" max="3" step="0.1" value="1">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">🎵 音调</span>
+                    <span class="slider-value" id="pitchValue">1.0</span>
+                </div>
+                <input type="range" id="pitchSlider" min="0" max="2" step="0.1" value="1">
+            </div>
+        </div>
+
+        <!-- 按钮组 -->
+        <div class="button-group">
+            <button class="btn-primary" id="playBtn" onclick="play()">
+                ▶️ 播放
+            </button>
+            <button class="btn-secondary" id="pauseBtn" onclick="pause()" disabled>
+                ⏸️ 暂停
+            </button>
+            <button class="btn-secondary" id="resumeBtn" onclick="resume()" disabled>
+                ▶️ 继续
+            </button>
+            <button class="btn-danger" id="stopBtn" onclick="stop()" disabled>
+                ⏹️ 停止
+            </button>
+        </div>
+
+        <!-- 波形动画 -->
+        <div class="wave-container" id="waveContainer">
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+        </div>
+
+        <!-- 状态栏 -->
+        <div class="status-bar" id="statusBar">
+            <span class="status-icon">✅</span>
+            <span class="status-text" id="statusText">准备就绪</span>
+        </div>
+
+        <!-- 示例文本 -->
+        <div class="examples">
+            <h3>快捷示例（点击填充）：</h3>
+            <div class="example-buttons">
+                <button class="example-btn" onclick="loadExample(0)">问候语</button>
+                <button class="example-btn" onclick="loadExample(1)">自我介绍</button>
+                <button class="example-btn" onclick="loadExample(2)">商务邮件</button>
+                <button class="example-btn" onclick="loadExample(3)">新闻播报</button>
+                <button class="example-btn" onclick="loadExample(4)">诗歌</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // 全局变量
+        // ============================================================================
+        const synth = window.speechSynthesis;
+        let voices = [];
+        let currentUtterance = null;
+
+        // ============================================================================
+        // 示例文本
+        // ============================================================================
+        const examples = [
+            "Hello! Good morning. How are you doing today? I hope you're having a wonderful day.",
+            "My name is Alex. I am a software developer with five years of experience in web development. I specialize in JavaScript and Python programming.",
+            "Dear team, I am writing to inform you that the project deadline has been extended to next Friday. Please ensure all deliverables are completed by then. Best regards.",
+            "Breaking news: Scientists have discovered a new species of butterfly in the Amazon rainforest. The discovery was made during a recent expedition led by international researchers.",
+            "Do not go gentle into that good night. Rage, rage against the dying of the light. These famous words by Dylan Thomas continue to inspire people around the world."
+        ];
+
+        // ============================================================================
+        // 初始化
+        // ============================================================================
+        window.addEventListener('load', () => {
+            checkCompatibility();
+            loadVoices();
+            updateCharCount();
+            setupEventListeners();
+        });
+
+        // ============================================================================
+        // 兼容性检查
+        // ============================================================================
+        function checkCompatibility() {
+            if (!('speechSynthesis' in window)) {
+                document.getElementById('warningBox').classList.add('show');
+                document.getElementById('playBtn').disabled = true;
+                updateStatus('error', '❌', '浏览器不支持语音合成');
+                return false;
+            }
+            return true;
+        }
+
+        // ============================================================================
+        // 加载音色列表
+        // ============================================================================
+        function loadVoices() {
+            voices = synth.getVoices();
+
+            if (voices.length === 0) {
+                // 某些浏览器需要等待 voiceschanged 事件
+                return;
+            }
+
+            populateVoiceList();
+        }
+
+        // 监听音色加载完成
+        if (synth.onvoiceschanged !== undefined) {
+            synth.onvoiceschanged = loadVoices;
+        }
+
+        function populateVoiceList() {
+            const voiceSelect = document.getElementById('voiceSelect');
+            voiceSelect.innerHTML = '';
+
+            // 过滤英文音色
+            const englishVoices = voices.filter(voice =>
+                voice.lang.toLowerCase().startsWith('en')
+            );
+
+            if (englishVoices.length === 0) {
+                voiceSelect.innerHTML = '<option>没有可用的英文音色</option>';
+                return;
+            }
+
+            // 按语言分组
+            const groups = {
+                'en-US': '美式英语',
+                'en-GB': '英式英语',
+                'en-AU': '澳式英语',
+                'en-CA': '加拿大英语',
+                'en-IN': '印度英语',
+                'other': '其他'
+            };
+
+            Object.entries(groups).forEach(([langCode, groupName]) => {
+                const groupVoices = englishVoices.filter(v =>
+                    langCode === 'other' ?
+                    !v.lang.match(/^en-(US|GB|AU|CA|IN)/) :
+                    v.lang.startsWith(langCode)
+                );
+
+                if (groupVoices.length === 0) return;
+
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = groupName;
+
+                groupVoices.forEach((voice, index) => {
+                    const option = document.createElement('option');
+                    option.value = voices.indexOf(voice);
+
+                    // 格式化显示名称
+                    let displayName = voice.name;
+                    if (voice.name.includes('Google')) {
+                        displayName = voice.name.replace('Google', '🌐');
+                    } else if (voice.name.includes('Microsoft')) {
+                        displayName = voice.name.replace('Microsoft', 'Ⓜ️');
+                    }
+
+                    option.textContent = displayName;
+
+                    // 标记默认音色
+                    if (voice.default) {
+                        option.textContent += ' ⭐';
+                        option.selected = true;
+                    }
+
+                    optgroup.appendChild(option);
+                });
+
+                voiceSelect.appendChild(optgroup);
+            });
+
+            updateStatus('ready', '✅', `已加载 ${englishVoices.length} 个英文音色`);
+        }
+
+        // ============================================================================
+        // 事件监听器设置
+        // ============================================================================
+        function setupEventListeners() {
+            // 文本输入监听
+            document.getElementById('textInput').addEventListener('input', updateCharCount);
+
+            // 滑块监听
+            document.getElementById('volumeSlider').addEventListener('input', function() {
+                const percent = Math.round(this.value * 100);
+                document.getElementById('volumeValue').textContent = percent + '%';
+            });
+
+            document.getElementById('rateSlider').addEventListener('input', function() {
+                document.getElementById('rateValue').textContent = this.value + 'x';
+            });
+
+            document.getElementById('pitchSlider').addEventListener('input', function() {
+                document.getElementById('pitchValue').textContent = this.value;
+            });
+
+            // 键盘快捷键
+            document.addEventListener('keydown', function(e) {
+                // Ctrl/Cmd + Enter: 播放
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    play();
+                }
+                // Esc: 停止
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    stop();
+                }
+            });
+        }
+
+        // ============================================================================
+        // 字符计数
+        // ============================================================================
+        function updateCharCount() {
+            const text = document.getElementById('textInput').value;
+            document.getElementById('charCount').textContent = text.length;
+        }
+
+        // ============================================================================
+        // 播放控制函数
+        // ============================================================================
+        function play() {
+            if (synth.speaking) {
+                updateStatus('warning', '⚠️', '已经在朗读中...');
+                return;
+            }
+
+            const text = document.getElementById('textInput').value.trim();
+            if (!text) {
+                updateStatus('error', '❌', '请输入要朗读的文字');
+                return;
+            }
+
+            // 创建朗读对象
+            currentUtterance = new SpeechSynthesisUtterance(text);
+
+            // 设置参数
+            const voiceIndex = document.getElementById('voiceSelect').value;
+            if (voiceIndex && voices[voiceIndex]) {
+                currentUtterance.voice = voices[voiceIndex];
+            }
+
+            currentUtterance.volume = parseFloat(document.getElementById('volumeSlider').value);
+            currentUtterance.rate = parseFloat(document.getElementById('rateSlider').value);
+            currentUtterance.pitch = parseFloat(document.getElementById('pitchSlider').value);
+
+            // 事件监听
+            currentUtterance.onstart = () => {
+                updateStatus('speaking', '🔊', '正在朗读...');
+                updateButtons('playing');
+                document.getElementById('waveContainer').classList.add('active');
+            };
+
+            currentUtterance.onend = () => {
+                updateStatus('ready', '✅', '朗读完成');
+                updateButtons('idle');
+                document.getElementById('waveContainer').classList.remove('active');
+            };
+
+            currentUtterance.onerror = (event) => {
+                console.error('Speech error:', event);
+                let errorMsg = '发生错误';
+
+                switch(event.error) {
+                    case 'network':
+                        errorMsg = '网络错误，请检查连接';
+                        break;
+                    case 'synthesis-failed':
+                        errorMsg = '语音合成失败';
+                        break;
+                    case 'synthesis-unavailable':
+                        errorMsg = '语音合成服务不可用';
+                        break;
+                    case 'text-too-long':
+                        errorMsg = '文本太长，请缩短后重试';
+                        break;
+                    case 'invalid-argument':
+                        errorMsg = '参数错误';
+                        break;
+                    default:
+                        errorMsg = `错误: ${event.error}`;
+                }
+
+                updateStatus('error', '❌', errorMsg);
+                updateButtons('idle');
+                document.getElementById('waveContainer').classList.remove('active');
+            };
+
+            currentUtterance.onpause = () => {
+                updateStatus('warning', '⏸️', '已暂停');
+                updateButtons('paused');
+            };
+
+            currentUtterance.onresume = () => {
+                updateStatus('speaking', '🔊', '继续朗读...');
+                updateButtons('playing');
+            };
+
+            // 开始朗读
+            try {
+                synth.speak(currentUtterance);
+            } catch (error) {
+                updateStatus('error', '❌', '启动语音合成失败: ' + error.message);
+                updateButtons('idle');
+            }
+        }
+
+        function pause() {
+            if (synth.speaking && !synth.paused) {
+                synth.pause();
+            }
+        }
+
+        function resume() {
+            if (synth.paused) {
+                synth.resume();
+            }
+        }
+
+        function stop() {
+            synth.cancel();
+            updateStatus('ready', '⏹️', '已停止');
+            updateButtons('idle');
+            document.getElementById('waveContainer').classList.remove('active');
+        }
+
+        // ============================================================================
+        // UI 更新函数
+        // ============================================================================
+        function updateStatus(type, icon, text) {
+            const statusBar = document.getElementById('statusBar');
+            const statusIcon = statusBar.querySelector('.status-icon');
+            const statusText = document.getElementById('statusText');
+
+            statusBar.className = 'status-bar';
+            if (type === 'speaking') {
+                statusBar.classList.add('speaking');
+            } else if (type === 'error') {
+                statusBar.classList.add('error');
+            }
+
+            statusIcon.textContent = icon;
+            statusText.textContent = text;
+        }
+
+        function updateButtons(state) {
+            const playBtn = document.getElementById('playBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resumeBtn = document.getElementById('resumeBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            // 重置所有按钮
+            playBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            stopBtn.disabled = true;
+
+            switch(state) {
+                case 'playing':
+                    playBtn.disabled = true;
+                    pauseBtn.disabled = false;
+                    stopBtn.disabled = false;
+                    break;
+                case 'paused':
+                    playBtn.disabled = true;
+                    resumeBtn.disabled = false;
+                    stopBtn.disabled = false;
+                    break;
+                case 'idle':
+                    // 默认状态，已在上面设置
+                    break;
+            }
+        }
+
+        // ============================================================================
+        // 示例加载
+        // ============================================================================
+        function loadExample(index) {
+            if (index >= 0 && index < examples.length) {
+                document.getElementById('textInput').value = examples[index];
+                updateCharCount();
+                updateStatus('ready', '📝', '已加载示例文本');
+            }
+        }
+
+        // ============================================================================
+        // Chrome 长文本朗读修复
+        // ============================================================================
+        // Chrome 在朗读长文本时可能自动暂停，这个函数可以防止这个问题
+        let resumeInfinity = null;
+
+        function startResumeInfinity() {
+            resumeInfinity = setInterval(() => {
+                if (synth.speaking && !synth.paused) {
+                    synth.pause();
+                    synth.resume();
+                }
+            }, 14000);
+        }
+
+        function stopResumeInfinity() {
+            if (resumeInfinity) {
+                clearInterval(resumeInfinity);
+                resumeInfinity = null;
+            }
+        }
+
+        // 在播放时启动，停止时清除
+        const originalSpeak = synth.speak.bind(synth);
+        synth.speak = function(utterance) {
+            startResumeInfinity();
+            utterance.addEventListener('end', stopResumeInfinity);
+            utterance.addEventListener('error', stopResumeInfinity);
+            originalSpeak(utterance);
+        };
+    </script>
+</body>
+</html>
