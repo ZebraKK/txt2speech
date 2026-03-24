@@ -80,11 +80,6 @@
             border-color: #667eea;
         }
 
-        /* 音色选择 */
-        .voice-section {
-            margin-bottom: 25px;
-        }
-
         .section-label {
             display: block;
             font-weight: 600;
@@ -95,8 +90,8 @@
 
         select {
             width: 100%;
-            padding: 12px 15px;
-            font-size: 15px;
+            padding: 10px 12px;
+            font-size: 14px;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
             background: white;
@@ -109,8 +104,11 @@
             border-color: #667eea;
         }
 
-        /* 滑块控制 */
-        .controls-section {
+        /* 控制网格（音量/语速/语调/音色 2列） */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
             background: #f8f9fa;
             padding: 20px;
             border-radius: 10px;
@@ -118,11 +116,12 @@
         }
 
         .slider-group {
-            margin-bottom: 20px;
+            margin-bottom: 0;
         }
 
-        .slider-group:last-child {
-            margin-bottom: 0;
+        .voice-group {
+            display: flex;
+            flex-direction: column;
         }
 
         .slider-header {
@@ -312,41 +311,6 @@
             margin-top: 5px;
         }
 
-        /* 快捷示例 */
-        .examples {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px dashed #e0e0e0;
-        }
-
-        .examples h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
-        }
-
-        .example-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .example-btn {
-            padding: 8px 15px;
-            font-size: 13px;
-            background: #f0f0f0;
-            border: 1px solid #d0d0d0;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .example-btn:hover {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-
         /* 响应式设计 */
         @media (max-width: 600px) {
             .container {
@@ -358,6 +322,10 @@
             }
 
             .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .controls-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -385,16 +353,24 @@
             </div>
         </div>
 
-        <!-- 音色选择 -->
-        <div class="voice-section">
-            <label class="section-label" for="voiceSelect">选择音色：</label>
-            <select id="voiceSelect">
-                <option value="">加载中...</option>
-            </select>
+        <!-- 按钮组 -->
+        <div class="button-group">
+            <button class="btn-primary" id="playBtn" onclick="play()">
+                ▶️ 播放
+            </button>
+            <button class="btn-secondary" id="pauseBtn" onclick="pause()" disabled>
+                ⏸️ 暂停
+            </button>
+            <button class="btn-secondary" id="resumeBtn" onclick="resume()" disabled>
+                ▶️ 继续
+            </button>
+            <button class="btn-danger" id="stopBtn" onclick="stop()" disabled>
+                ⏹️ 停止
+            </button>
         </div>
 
-        <!-- 参数控制 -->
-        <div class="controls-section">
+        <!-- 参数控制（2列网格：音量|语速 / 语调|音色） -->
+        <div class="controls-grid">
             <div class="slider-group">
                 <div class="slider-header">
                     <span class="slider-label">🔊 音量</span>
@@ -413,27 +389,18 @@
 
             <div class="slider-group">
                 <div class="slider-header">
-                    <span class="slider-label">🎵 音调</span>
+                    <span class="slider-label">🎵 语调</span>
                     <span class="slider-value" id="pitchValue">1.0</span>
                 </div>
                 <input type="range" id="pitchSlider" min="0" max="2" step="0.1" value="1">
             </div>
-        </div>
 
-        <!-- 按钮组 -->
-        <div class="button-group">
-            <button class="btn-primary" id="playBtn" onclick="play()">
-                ▶️ 播放
-            </button>
-            <button class="btn-secondary" id="pauseBtn" onclick="pause()" disabled>
-                ⏸️ 暂停
-            </button>
-            <button class="btn-secondary" id="resumeBtn" onclick="resume()" disabled>
-                ▶️ 继续
-            </button>
-            <button class="btn-danger" id="stopBtn" onclick="stop()" disabled>
-                ⏹️ 停止
-            </button>
+            <div class="voice-group">
+                <label class="section-label" for="voiceSelect">🎤 音色</label>
+                <select id="voiceSelect">
+                    <option value="">加载中...</option>
+                </select>
+            </div>
         </div>
 
         <!-- 波形动画 -->
@@ -451,17 +418,6 @@
             <span class="status-text" id="statusText">准备就绪</span>
         </div>
 
-        <!-- 示例文本 -->
-        <div class="examples">
-            <h3>快捷示例（点击填充）：</h3>
-            <div class="example-buttons">
-                <button class="example-btn" onclick="loadExample(0)">问候语</button>
-                <button class="example-btn" onclick="loadExample(1)">自我介绍</button>
-                <button class="example-btn" onclick="loadExample(2)">商务邮件</button>
-                <button class="example-btn" onclick="loadExample(3)">新闻播报</button>
-                <button class="example-btn" onclick="loadExample(4)">诗歌</button>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -472,20 +428,6 @@
         let voices = [];
         let currentUtterance = null;
 
-        // ============================================================================
-        // 示例文本
-        // ============================================================================
-        const examples = [
-            "Hello! Good morning. How are you doing today? I hope you're having a wonderful day.",
-            "My name is Alex. I am a software developer with five years of experience in web development. I specialize in JavaScript and Python programming.",
-            "Dear team, I am writing to inform you that the project deadline has been extended to next Friday. Please ensure all deliverables are completed by then. Best regards.",
-            "Breaking news: Scientists have discovered a new species of butterfly in the Amazon rainforest. The discovery was made during a recent expedition led by international researchers.",
-            "Do not go gentle into that good night. Rage, rage against the dying of the light. These famous words by Dylan Thomas continue to inspire people around the world."
-        ];
-
-        // ============================================================================
-        // 初始化
-        // ============================================================================
         window.addEventListener('load', () => {
             checkCompatibility();
             loadVoices();
@@ -787,17 +729,6 @@
                 case 'idle':
                     // 默认状态，已在上面设置
                     break;
-            }
-        }
-
-        // ============================================================================
-        // 示例加载
-        // ============================================================================
-        function loadExample(index) {
-            if (index >= 0 && index < examples.length) {
-                document.getElementById('textInput').value = examples[index];
-                updateCharCount();
-                updateStatus('ready', '📝', '已加载示例文本');
             }
         }
 
